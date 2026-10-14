@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "obd2reader"
+version = "0.1.0"
+description = "Cross-platform OBD-II diagnostic reader for VW Sharan over a Bluetooth ELM327 adapter"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["pyserial>=3.5"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+ble = ["bleak>=0.21"]
+
+[project.scripts]
+obd2 = "obd2reader.cli:main"
+
+[project.gui-scripts]
+obd2-gui = "obd2reader.gui:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
