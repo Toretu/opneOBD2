@@ -71,4 +71,21 @@ def test_describe_ebs():
 def test_describe_unknown_fallback():
     text = describe("P3456")
     assert "Powertrain" in text
-    assert "no detailed description" in text.lower()
+
+
+def test_describe_generic_code_gives_subsystem():
+    # P0401 is curated, but an unlisted generic code still gets a subsystem hint.
+    text = describe("P0461")
+    assert "Powertrain" in text
+    assert "generic/standard" in text
+
+
+def test_describe_manufacturer_specific_code():
+    text = describe("P1234")
+    assert "manufacturer-specific" in text
+
+
+def test_describe_common_codes_across_makes():
+    assert "misfire" in describe("P0300").lower()
+    assert "catalyst" in describe("P0420").lower()
+    assert "lean" in describe("P0171").lower()

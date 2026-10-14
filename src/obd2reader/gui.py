@@ -32,7 +32,7 @@ class ObdGui:
 
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.root.title("OBD-II Reader - VW Sharan")
+        self.root.title("OBD-II Reader")
         self.root.minsize(640, 420)
 
         self._reader: Optional[OBD2Reader] = None

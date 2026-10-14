@@ -119,7 +119,7 @@ def _add_connection_args(parser: argparse.ArgumentParser) -> None:
 def main(argv: List[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="obd2",
-        description="Read and clear OBD-II trouble codes from a VW Sharan (Bluetooth ELM327).",
+        description="Read and clear OBD-II trouble codes from any vehicle (Bluetooth/serial ELM327).",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "obd2reader"
 version = "0.1.0"
-description = "Cross-platform OBD-II diagnostic reader for VW Sharan over a Bluetooth ELM327 adapter"
+description = "Cross-platform OBD-II diagnostic reader for any vehicle over a Bluetooth/serial ELM327 adapter"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = ["pyserial>=3.5"]

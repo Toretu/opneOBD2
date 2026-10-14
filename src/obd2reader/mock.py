@@ -1,6 +1,6 @@
 """A stateful in-memory ELM327 simulator for hardware-free demos and tests.
 
-It emulates a VW Sharan reporting a realistic mix of faults, including glow-plug
+It emulates a vehicle reporting a realistic mix of faults, including glow-plug
 and ABS/EBS codes, and honours clear requests (mode 04 and UDS 0x14).
 """
 

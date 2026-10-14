@@ -1,9 +1,11 @@
-# OBD-II Reader for VW Sharan (Bluetooth ELM327)
+# OBD-II Reader (Bluetooth / serial ELM327)
 
-A small, cross-platform (Windows + Linux) command-line tool to read and clear
-diagnostic trouble codes (DTCs) from a VW Sharan using a **Bluetooth ELM327**
-adapter. It decodes generic OBD-II codes plus common VW TDI faults such as
-**glow-plug** and **ABS/EBS brake** errors.
+A small, cross-platform (Windows + Linux) tool to read and clear diagnostic
+trouble codes (DTCs) from **any OBD-II vehicle** using an ELM327 adapter over
+Bluetooth or serial. It decodes standard SAE codes shared across all makes, with
+extra detail for common petrol and diesel faults (misfires, catalyst, EGR,
+**glow-plug**, DPF, **ABS/EBS brake** errors, and more). Codes it doesn't know by
+name still get a meaningful subsystem-level description.
 
 ## How the Bluetooth connection works
 

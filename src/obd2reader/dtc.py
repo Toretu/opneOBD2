@@ -118,12 +118,45 @@ def parse_dtc_response(raw: str, response_byte: int) -> List[str]:
 # ---------------------------------------------------------------------------
 # Human-readable descriptions.
 #
-# Generic/ISO codes plus a curated set of VW Sharan (1.9/2.0 TDI) faults,
-# including glow-plug and ABS/EBS brake system codes.
+# A curated set of common, cross-manufacturer OBD-II codes (standardised SAE
+# J2012 definitions) plus a few frequently seen diesel/brake faults. Codes not
+# listed here still get a meaningful subsystem-level description from
+# `describe()`, so the tool works on any OBD-II vehicle.
 # ---------------------------------------------------------------------------
 
 DTC_DATABASE: dict[str, str] = {
-    # --- Glow plug / pre-heating system -----------------------------------
+    # --- Misfire ----------------------------------------------------------
+    "P0300": "Random / multiple cylinder misfire detected",
+    "P0301": "Cylinder 1 misfire detected",
+    "P0302": "Cylinder 2 misfire detected",
+    "P0303": "Cylinder 3 misfire detected",
+    "P0304": "Cylinder 4 misfire detected",
+    "P0305": "Cylinder 5 misfire detected",
+    "P0306": "Cylinder 6 misfire detected",
+    # --- Fuel / air metering & oxygen sensors -----------------------------
+    "P0171": "System too lean (bank 1)",
+    "P0172": "System too rich (bank 1)",
+    "P0174": "System too lean (bank 2)",
+    "P0175": "System too rich (bank 2)",
+    "P0130": "O2 sensor circuit malfunction (bank 1, sensor 1)",
+    "P0133": "O2 sensor circuit slow response (bank 1, sensor 1)",
+    "P0135": "O2 sensor heater circuit malfunction (bank 1, sensor 1)",
+    "P0401": "Exhaust gas recirculation (EGR) flow insufficient",
+    "P0402": "Exhaust gas recirculation (EGR) flow excessive",
+    "P0404": "EGR control circuit range/performance",
+    # --- Catalyst / emissions ---------------------------------------------
+    "P0420": "Catalyst system efficiency below threshold (bank 1)",
+    "P0430": "Catalyst system efficiency below threshold (bank 2)",
+    "P0440": "Evaporative emission (EVAP) system malfunction",
+    "P0442": "EVAP system leak detected (small leak)",
+    "P0455": "EVAP system leak detected (large leak)",
+    # --- Sensors ----------------------------------------------------------
+    "P0101": "Mass air flow (MAF) sensor range/performance",
+    "P0113": "Intake air temperature sensor circuit high",
+    "P0118": "Engine coolant temperature sensor circuit high",
+    "P0128": "Coolant thermostat (below regulating temperature)",
+    "P0500": "Vehicle speed sensor malfunction",
+    # --- Diesel: glow plug / pre-heating ----------------------------------
     "P0380": "Glow plug / heater circuit A malfunction",
     "P0381": "Glow plug / heater indicator circuit malfunction",
     "P0382": "Glow plug / heater circuit B malfunction",
@@ -136,26 +169,25 @@ DTC_DATABASE: dict[str, str] = {
     "P0676": "Cylinder 6 glow plug circuit malfunction",
     "P0677": "Cylinder 7 glow plug circuit malfunction",
     "P0678": "Cylinder 8 glow plug circuit malfunction",
+    # --- Diesel: turbo / fuel / DPF ---------------------------------------
+    "P0087": "Fuel rail / system pressure too low",
+    "P0088": "Fuel rail / system pressure too high",
+    "P0234": "Turbocharger overboost condition",
+    "P0299": "Turbocharger underboost (low boost pressure)",
+    "P0471": "Exhaust pressure sensor range/performance",
+    "P2002": "Diesel particulate filter (DPF) efficiency below threshold",
+    "P2015": "Intake manifold runner / flap position sensor (bank 1)",
+    "P242F": "Diesel particulate filter restricted - ash accumulation",
+    # --- Electrical / transmission ----------------------------------------
+    "P0562": "System voltage low",
+    "P0563": "System voltage high",
+    "P0700": "Transmission control system malfunction",
+    "P0705": "Transmission range sensor circuit malfunction",
     # --- ABS / EBS brake system (manufacturer-specific chassis codes) -----
     "C1011": "ABS/EBS control unit fault",
     "C1041": "ABS/EBS wheel speed sensor signal fault",
     "C1200": "ABS/EBS hydraulic pump / solenoid fault",
     "C1611": "EBS/ESP control module supply voltage fault",
-    # --- Common VW TDI powertrain faults ----------------------------------
-    "P0087": "Fuel rail / system pressure too low",
-    "P0088": "Fuel rail / system pressure too high",
-    "P0101": "Mass air flow (MAF) sensor range/performance",
-    "P0234": "Turbocharger overboost condition",
-    "P0299": "Turbocharger underboost (low boost pressure)",
-    "P0401": "Exhaust gas recirculation (EGR) flow insufficient",
-    "P0402": "Exhaust gas recirculation (EGR) flow excessive",
-    "P0404": "EGR control circuit range/performance",
-    "P0471": "Exhaust pressure sensor range/performance",
-    "P2002": "Diesel particulate filter (DPF) efficiency below threshold",
-    "P2015": "Intake manifold runner / flap position sensor (bank 1)",
-    "P242F": "Diesel particulate filter restricted - ash accumulation",
-    "P0562": "System voltage low",
-    "P0563": "System voltage high",
     # --- Network / communication ------------------------------------------
     "U0100": "Lost communication with engine control module (ECM)",
     "U0101": "Lost communication with transmission control module (TCM)",
@@ -164,14 +196,51 @@ DTC_DATABASE: dict[str, str] = {
 
 _SYSTEM_NAMES = {"P": "Powertrain", "C": "Chassis", "B": "Body", "U": "Network"}
 
+# Powertrain subsystem by the third character of the code (SAE J2012 grouping).
+_P_SUBSYSTEMS = {
+    "0": "fuel and air metering",
+    "1": "fuel and air metering",
+    "2": "fuel and air metering (injector circuit)",
+    "3": "ignition system or misfire",
+    "4": "auxiliary emission controls",
+    "5": "vehicle speed, idle control and auxiliary inputs",
+    "6": "computer output circuit / auxiliary outputs",
+    "7": "transmission",
+    "8": "transmission",
+    "9": "transmission",
+    "A": "hybrid propulsion",
+    "B": "hybrid propulsion",
+    "C": "hybrid propulsion",
+}
+
+
+def _is_manufacturer_specific(code: str) -> bool:
+    letter, second = code[0], code[1]
+    if letter == "P":
+        if second == "1":
+            return True
+        if second == "3":  # P30xx-P33xx are manufacturer, P34xx-P39xx generic
+            return code[2] in "0123"
+        return False
+    return second == "1"  # C/B/U: second char 1 = manufacturer-specific
+
 
 def describe(code: str) -> str:
-    """Return a human-readable description for a DTC code."""
+    """Return a human-readable description for a DTC code.
+
+    Known codes use the curated database; any other valid code falls back to a
+    subsystem-level description, so the tool is useful on any OBD-II vehicle.
+    """
 
     code = code.strip().upper()
     if code in DTC_DATABASE:
         return DTC_DATABASE[code]
 
-    system = _SYSTEM_NAMES.get(code[:1], "Unknown")
-    scope = "manufacturer-specific" if code[1:2] in ("1", "3") else "generic/ISO"
-    return f"{system} {scope} trouble code (no detailed description available)"
+    letter = code[:1]
+    system = _SYSTEM_NAMES.get(letter, "Unknown")
+    scope = "manufacturer-specific" if _is_manufacturer_specific(code) else "generic/standard"
+
+    if letter == "P" and len(code) >= 3 and code[2] in _P_SUBSYSTEMS:
+        return f"{system} - {_P_SUBSYSTEMS[code[2]]} ({scope} code)"
+    return f"{system} ({scope} trouble code)"
+
