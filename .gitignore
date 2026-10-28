@@ -16,6 +16,21 @@ env/
 .mypy_cache/
 .ruff_cache/
 
+# Local diagnostics and reports
+*.log
+report*.txt
+
+# Local secrets and signing credentials
+.env
+.env.*
+!.env.example
+key.properties
+keystore.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+
 # Editor / OS
 .vscode/
 .idea/
